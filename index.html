@@ -59,6 +59,11 @@
     }
 
     .pg{display:none}.pg.on{display:block}
+    .dash-month-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
+    .dash-month-bar label{font-size:12px;font-weight:600;color:#444;display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .dash-month-bar select{flex:1;min-width:140px;padding:7px 10px;font-size:13px;border:1px solid #dde2ea;border-radius:8px;background:#fff;color:#111;outline:none;font-family:inherit;font-weight:600;-webkit-appearance:none}
+    .dash-month-bar select:focus{border-color:#0f6e56}
+    #d-cats-month-label,#d-recent-month-label{color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px}
     .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
     .mc{border-radius:10px;padding:14px 14px 12px}
     .mc.g{background:#e6f7f2;border:1px solid #9fe1cb}
@@ -159,9 +164,11 @@
     .inline-edit.on{display:flex}
     .inline-edit input{flex:1;padding:6px 9px;font-size:13px;border:1px solid #b5d4f4;border-radius:6px;outline:none;font-family:inherit}
     .inline-edit label{font-size:12px;font-weight:600;color:#0c447c;white-space:nowrap}
-    .budget-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:9px 11px;background:#f7f8fa;border-radius:8px;border:1px solid #e8ecf0}
-    .budget-row label{font-size:12px;font-weight:600;color:#555;white-space:nowrap}
-    .budget-row input{flex:1;padding:7px 9px;font-size:13px;border:1px solid #dde2ea;border-radius:7px;background:#fff;color:#111;outline:none;font-family:inherit;-webkit-appearance:none}
+    .budget-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:9px 11px;background:#f7f8fa;border-radius:8px;border:1px solid #e8ecf0;flex-wrap:wrap}
+    .budget-row label{font-size:12px;font-weight:600;color:#555;white-space:nowrap;width:100%}
+    .budget-row input{flex:1 1 auto;min-width:0;padding:7px 9px;font-size:13px;border:1px solid #dde2ea;border-radius:7px;background:#fff;color:#111;outline:none;font-family:inherit;-webkit-appearance:none}
+    .budget-row .btn{flex-shrink:0}
+    @media(max-width:380px){.budget-row{flex-direction:column;align-items:stretch}.budget-row input,.budget-row .btn{width:100%}}
     .sub-sec-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#aaa;margin:8px 0 6px}
     .sub-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f2f5}
     .sub-row:last-child{border-bottom:none}
@@ -223,13 +230,17 @@
 
   <!-- DASHBOARD -->
   <div class="pg on" id="pg-dash">
+    <div class="dash-month-bar">
+      <label for="dash-mon-sel"><i class="ti ti-calendar-month"></i> Showing data for</label>
+      <select id="dash-mon-sel" onchange="renderDash()"></select>
+    </div>
     <div class="metrics">
       <div class="mc g"><div class="mlbl"><i class="ti ti-wallet" style="font-size:11px"></i> Target</div><div class="mval" id="m-tgt">Rs. 0</div><div class="mnote" id="m-tgt-n">Set in Admin</div></div>
       <div class="mc r"><div class="mlbl"><i class="ti ti-trending-up" style="font-size:11px"></i> Spent</div><div class="mval" id="m-spt">Rs. 0</div><div class="mnote" id="m-spt-n">0 txns</div></div>
       <div class="mc b"><div class="mlbl"><i class="ti ti-piggy-bank" style="font-size:11px"></i> Left</div><div class="mval" id="m-rem">Rs. 0</div><div class="mnote" id="m-rem-n">0% used</div></div>
     </div>
-    <div class="card"><div class="ch"><i class="ti ti-chart-bar"></i> Budget tracker — this month</div><div id="d-cats"></div></div>
-    <div class="card"><div class="ch"><i class="ti ti-history"></i> Recent transactions</div><div id="d-recent"></div></div>
+    <div class="card"><div class="ch"><i class="ti ti-chart-bar"></i> Budget tracker <span id="d-cats-month-label">— this month</span></div><div id="d-cats"></div></div>
+    <div class="card"><div class="ch"><i class="ti ti-history"></i> Recent transactions <span id="d-recent-month-label">— this month</span></div><div id="d-recent"></div></div>
   </div>
 
   <!-- ADD EXPENSE -->
@@ -439,7 +450,7 @@ function exportExcel(){
 function renderRec(){
   const s=gs();const rows=getFilteredRows();const total=rows.reduce((a,e)=>a+e.amt,0);
   const sumEl=document.getElementById('rec-summary');
-  if(rows.length){sumEl.innerHTML='<div class="rec-sum-pill"><strong>'+rows.length+'</strong> records</div><div class="rec-sum-pill">Total: <strong>'+inr(total)+'</strong></div><div class="rec-sum-pill">Avg: <strong>'+inr(total/rows.length)+'</strong></div>';}
+  if(rows.length){const uniqueDays=new Set(rows.map(e=>e.date)).size;const avgPerDay=uniqueDays>0?total/uniqueDays:0;sumEl.innerHTML='<div class="rec-sum-pill"><strong>'+rows.length+'</strong> records</div><div class="rec-sum-pill">Total: <strong>'+inr(total)+'</strong></div><div class="rec-sum-pill">Avg/day: <strong>'+inr(avgPerDay)+'</strong> <span style="opacity:.7">('+uniqueDays+' day'+(uniqueDays!==1?'s':'')+')</span></div>';}
   else{sumEl.innerHTML='';}
   if(!rows.length){document.getElementById('rec-tbl').innerHTML='<div class="empty">No records match the current filter.</div>';return;}
   let t='<div class="tbl-wrap"><table><thead><tr><th style="width:86px">Date</th><th style="width:90px">Category</th><th style="width:95px">Sub-cat</th><th>Purpose</th><th class="ta-r" style="width:100px">Amount</th><th style="width:90px">Notes</th><th style="width:70px;text-align:center">Actions</th></tr></thead><tbody>';
@@ -516,8 +527,38 @@ function addExp(){
   const m=document.getElementById('ok-msg');m.style.display='flex';setTimeout(()=>m.style.display='none',2500);
 }
 
+function fillDashMonths(){
+  const s=gs();
+  const sel=document.getElementById('dash-mon-sel');
+  const prevVal=sel.value;
+  const now=new Date();
+  const curYm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const monthsSet=new Set(s.exps.map(e=>e.date.substring(0,7)));
+  monthsSet.add(curYm);
+  const months=[...monthsSet].sort().reverse();
+  sel.innerHTML=months.map(m=>{
+    const[y,mo]=m.split('-');
+    const label=new Date(+y,+mo-1).toLocaleString('default',{month:'long',year:'numeric'});
+    const tag=m===curYm?' (Current)':'';
+    return '<option value="'+m+'">'+label+tag+'</option>';
+  }).join('');
+  if(prevVal&&months.includes(prevVal))sel.value=prevVal;
+  else sel.value=curYm;
+}
+
 function renderDash(){
-  const s=gs();const now=new Date();const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const s=gs();
+  fillDashMonths();
+  const ym=document.getElementById('dash-mon-sel').value;
+  const now=new Date();
+  const curYm=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const isCurrent=ym===curYm;
+  const[yy,mm]=ym.split('-');
+  const monthLabel=new Date(+yy,+mm-1).toLocaleString('default',{month:'long',year:'numeric'});
+  const labelSuffix=isCurrent?'— this month ('+monthLabel+')':'— '+monthLabel;
+  document.getElementById('d-cats-month-label').textContent=labelSuffix;
+  document.getElementById('d-recent-month-label').textContent=labelSuffix;
+
   const tm=s.exps.filter(e=>e.date.startsWith(ym));const spent=tm.reduce((a,e)=>a+e.amt,0);
   const rem=s.inc-spent;const u=pct(spent,s.inc);
   document.getElementById('m-tgt').textContent=inr(s.inc);
@@ -537,15 +578,15 @@ function renderDash(){
   }
   const wb2=Object.values(tots).filter(v=>v.budget>0).sort((a,b)=>pct(b.total,b.budget)-pct(a.total,a.budget));
   const nb=Object.values(tots).filter(v=>v.budget===0&&v.total>0).sort((a,b)=>b.total-a.total);
-  if(wb2.length===0&&nb.length===0&&!(s.inc>0||spent>0)){h='<div class="empty">No expenses this month yet. Start adding!</div>';}
+  if(wb2.length===0&&nb.length===0&&!(s.inc>0||spent>0)){h='<div class="empty">No expenses in '+monthLabel+' yet.</div>';}
   if(wb2.length>0){
     h+='<div class="sec-lbl">Category budgets</div>';
     wb2.forEach(v=>{const p=pct(v.total,v.budget);const bw=Math.min(p,100);const ov=v.total>v.budget;const wn=p>=80&&!ov;const cls=ov?'over':wn?'warn':'ok';const bc3=ov?'#D85A30':wn?'#BA7517':col(v.idx);const cc=ov?'chip-over':wn?'chip-warn':'chip-ok';const ct=ov?p+'% OVER':p+'%';const nt=ov?'Over by '+inr(v.total-v.budget):wn?'Approaching limit, '+inr(v.budget-v.total)+' left':'On track, '+inr(v.budget-v.total)+' left';h+='<div class="brow '+cls+'"><div class="brow-top"><div class="brow-left"><span class="badge '+bc(v.idx)+'">'+v.name+'</span></div><div class="brow-right"><span class="brow-spent">'+inr(v.total)+'</span><span class="brow-of">of '+inr(v.budget)+'</span><span class="brow-chip '+cc+'">'+ct+'</span></div></div><div class="brow-track"><div class="brow-bar" style="width:'+bw+'%;background:'+bc3+'"></div></div><div class="brow-note">'+nt+'</div></div>';});
   }
   if(nb.length>0){h+='<div class="sec-lbl">Spent — no budget set</div>';nb.forEach(v=>{h+='<div class="brow none"><div class="brow-top"><div class="brow-left"><span class="badge '+bc(v.idx)+'">'+v.name+'</span></div><div class="brow-right"><span class="brow-spent">'+inr(v.total)+'</span><span class="brow-chip chip-none">No limit</span></div></div><div class="brow-note">Set a budget in Admin to track this category</div></div>';});}
   document.getElementById('d-cats').innerHTML=h;
-  const rec=s.exps.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
-  if(!rec.length){document.getElementById('d-recent').innerHTML='<div class="empty">No transactions yet.</div>';return;}
+  const rec=tm.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  if(!rec.length){document.getElementById('d-recent').innerHTML='<div class="empty">No transactions in '+monthLabel+'.</div>';return;}
   let rh='';rec.forEach(e=>{const idx=ci(s,e.cat);const cn=idx>=0?s.cats[idx].name:e.cat;const bg=col(idx);const lbl=e.subcat?cn+' / '+e.subcat:cn;rh+='<div class="ri"><div class="ri-dot" style="background:'+bg+'"><i class="ti ti-tag"></i></div><div class="ri-info"><div class="ri-name">'+e.item+'</div><div class="ri-meta">'+e.date+' | '+lbl+'</div></div><div class="ri-amt">'+inr(e.amt)+'</div></div>';});
   document.getElementById('d-recent').innerHTML=rh;
 }
